@@ -1,9 +1,8 @@
 import requests
-import threading
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 import urllib3
-from lead_gen_agent.config import PAGESPEED_API_KEY, logger
+from lead_gen_agent.config import PAGESPEED_API_KEY, logger, safe_requests_get
 
 # Disable SSL warnings for cases where we check invalid/missing SSL certificates
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,7 +14,7 @@ def check_ssl(domain: str) -> bool:
     url = f"https://{domain}"
     try:
         # verify=True is key: this forces requests to validate the SSL certificate
-        response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=8, verify=True)
+        response = safe_requests_get(url, headers={"User-Agent": USER_AGENT}, timeout=8, verify=True)
         return True
     except requests.exceptions.SSLError:
         logger.debug(f"SSL handshake failed for {url}")
@@ -36,7 +35,7 @@ def check_robots_and_sitemap(base_url: str):
     
     # Check robots.txt
     try:
-        r = requests.get(robots_url, headers=headers, timeout=5, verify=False)
+        r = safe_requests_get(robots_url, headers=headers, timeout=5, verify=False)
         if r.status_code == 200:
             has_robots = True
     except Exception as e:
@@ -44,7 +43,7 @@ def check_robots_and_sitemap(base_url: str):
         
     # Check sitemap.xml
     try:
-        r = requests.get(sitemap_url, headers=headers, timeout=5, verify=False)
+        r = safe_requests_get(sitemap_url, headers=headers, timeout=5, verify=False)
         if r.status_code == 200:
             has_sitemap = True
     except Exception as e:
@@ -134,66 +133,40 @@ def get_pagespeed_data(url: str):
         "has_robots": None
     }
     
-    # Wrap the blocking API request in a daemon thread so it can never hang indefinitely (e.g. on low-level DNS resolution)
-    result_container = {}
-    
-    def worker():
-        try:
-            response = requests.get(api_url, params=params, timeout=12)
-            result_container["status_code"] = response.status_code
-            result_container["text"] = response.text
-            result_container["json"] = response.json()
-        except requests.exceptions.Timeout:
-            result_container["error"] = "timeout"
-        except Exception as e:
-            result_container["error"] = str(e)
+    try:
+        response = safe_requests_get(api_url, params=params, timeout=12)
+        if response.status_code == 200:
+            data = response.json()
+            # Extract score
+            categories = data.get("lighthouseResult", {}).get("categories", {})
+            performance = categories.get("performance", {})
+            score = performance.get("score")
+            if score is not None:
+                pagespeed_score = int(score * 100)
+                
+            # Extract SEO audits
+            audits = data.get("lighthouseResult", {}).get("audits", {})
             
-    t = threading.Thread(target=worker, daemon=True)
-    t.start()
-    t.join(timeout=12.0)
-    
-    if t.is_alive():
-        logger.warning(f"PageSpeed Insights API request took too long (12s limit) for {url}. Proceeding with fallback score.")
-        return pagespeed_score, seo_audits
-        
-    if "error" in result_container:
-        err = result_container["error"]
-        if err == "timeout":
-            logger.warning(f"PageSpeed Insights API request timed out (12s limit) for {url}. Proceeding with fallback score.")
+            title_audit = audits.get("document-title")
+            if title_audit and title_audit.get("score") is not None:
+                seo_audits["has_title"] = (title_audit.get("score") == 1)
+                
+            desc_audit = audits.get("meta-description")
+            if desc_audit and desc_audit.get("score") is not None:
+                seo_audits["has_description"] = (desc_audit.get("score") == 1)
+                
+            robots_audit = audits.get("robots-txt")
+            if robots_audit and robots_audit.get("score") is not None:
+                seo_audits["has_robots"] = (robots_audit.get("score") == 1)
+                
+            logger.info(f"PageSpeed mobile performance score for {url}: {pagespeed_score}/100. Fallback SEO audits parsed successfully.")
         else:
-            logger.warning(f"Error calling PageSpeed API for {url}: {err}")
-        return pagespeed_score, seo_audits
-        
-    status_code = result_container.get("status_code")
-    if status_code == 200:
-        data = result_container.get("json", {})
-        # Extract score
-        categories = data.get("lighthouseResult", {}).get("categories", {})
-        performance = categories.get("performance", {})
-        score = performance.get("score")
-        if score is not None:
-            pagespeed_score = int(score * 100)
-            
-        # Extract SEO audits
-        audits = data.get("lighthouseResult", {}).get("audits", {})
-        
-        title_audit = audits.get("document-title")
-        if title_audit and title_audit.get("score") is not None:
-            seo_audits["has_title"] = (title_audit.get("score") == 1)
-            
-        desc_audit = audits.get("meta-description")
-        if desc_audit and desc_audit.get("score") is not None:
-            seo_audits["has_description"] = (desc_audit.get("score") == 1)
-            
-        robots_audit = audits.get("robots-txt")
-        if robots_audit and robots_audit.get("score") is not None:
-            seo_audits["has_robots"] = (robots_audit.get("score") == 1)
-            
-        logger.info(f"PageSpeed mobile performance score for {url}: {pagespeed_score}/100. Fallback SEO audits parsed successfully.")
-    else:
-        text = result_container.get("text", "")
-        logger.warning(f"PageSpeed API returned status code {status_code}: {text}")
-        
+            logger.warning(f"PageSpeed API returned status code {response.status_code}: {response.text}")
+    except requests.exceptions.Timeout:
+        logger.warning(f"PageSpeed Insights API request timed out (12s limit) for {url}. Proceeding with fallback score (None).")
+    except Exception as e:
+        logger.warning(f"Error calling PageSpeed API for {url}: {e}")
+         
     return pagespeed_score, seo_audits
 
 def analyze_website(website_url: str):
@@ -223,7 +196,7 @@ def analyze_website(website_url: str):
     direct_fetch_success = False
     dns_failed = False
     try:
-        resp = requests.get(website_url, headers={"User-Agent": USER_AGENT}, timeout=10, verify=False)
+        resp = safe_requests_get(website_url, headers={"User-Agent": USER_AGENT}, timeout=10, verify=False)
         if resp.status_code == 200:
             html_content = resp.text
             base_url = resp.url # Update base URL if there was redirect
