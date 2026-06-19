@@ -254,6 +254,15 @@
             cursor: not-allowed;
         }
 
+        .btn-danger {
+            background-color: var(--danger);
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
         .btn-secondary {
             background-color: #f1f5f9;
             color: var(--text-primary);
@@ -755,9 +764,11 @@
     let lastNiche = "";
     let lastLocation = "";
     let lastLimit = "";
+    let isRunningState = false;
 
     // Toggle checkbox helper on text click
     function toggleCheckbox(e) {
+        if (isRunningState) return;
         if (e.target.tagName !== 'INPUT') {
             const cb = document.getElementById('force');
             cb.checked = !cb.checked;
@@ -772,6 +783,7 @@
         
         loadLeads();
         updateRunButtonState();
+        checkCurrentStatus();
     });
 
     // Reactive input listeners to filter table in real time and manage run button state
@@ -794,16 +806,59 @@
     document.getElementById("limit").addEventListener("change", updateRunButtonState);
     document.getElementById("limit").addEventListener("input", updateRunButtonState);
 
+    function checkCurrentStatus() {
+        fetch("/api/status")
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "running") {
+                    setPipelineRunningState(true);
+                    pollInterval = setInterval(pollStatus, 1500);
+                }
+            })
+            .catch(err => console.error("Error checking status:", err));
+    }
+
+    function setControlsDisabled(disabled) {
+        document.getElementById("niche").disabled = disabled;
+        document.getElementById("location").disabled = disabled;
+        document.getElementById("limit").disabled = disabled;
+        document.getElementById("force").disabled = disabled;
+        const checkboxGroup = document.querySelector(".checkbox-group");
+        if (checkboxGroup) {
+            checkboxGroup.style.opacity = disabled ? "0.6" : "1";
+            checkboxGroup.style.pointerEvents = disabled ? "none" : "auto";
+        }
+    }
+
+    function setPipelineRunningState(running) {
+        isRunningState = running;
+        const btn = document.getElementById("btn-submit");
+        const btnText = document.getElementById("btn-text");
+        const btnSpinner = document.getElementById("btn-spinner");
+        
+        setControlsDisabled(running);
+        
+        if (running) {
+            btn.removeAttribute("disabled");
+            btn.className = "btn-danger";
+            btnText.textContent = "Stop Pipeline";
+            btnSpinner.style.display = "inline-block";
+        } else {
+            btn.className = "btn-primary";
+            btnText.textContent = "Run Pipeline";
+            btnSpinner.style.display = "none";
+            updateRunButtonState();
+        }
+    }
+
     function updateRunButtonState() {
         const niche = document.getElementById("niche").value.trim();
         const location = document.getElementById("location").value.trim();
         const limit = document.getElementById("limit").value.trim();
         const btn = document.getElementById("btn-submit");
         
-        // If the pipeline is currently running, keep it disabled
-        const btnText = document.getElementById("btn-text").textContent;
-        if (btnText === "Running...") {
-            btn.setAttribute("disabled", "true");
+        if (isRunningState) {
+            btn.removeAttribute("disabled");
             return;
         }
         
@@ -906,15 +961,28 @@
     document.getElementById("run-form").addEventListener("submit", (e) => {
         e.preventDefault();
         
+        if (isRunningState) {
+            const btn = document.getElementById("btn-submit");
+            const btnText = document.getElementById("btn-text");
+            btn.setAttribute("disabled", "true");
+            btnText.textContent = "Stopping...";
+            
+            fetch("/api/cancel", { method: "POST" })
+                .then(res => res.json())
+                .catch(err => {
+                    console.error("Cancel failed:", err);
+                    setPipelineRunningState(false);
+                });
+            return;
+        }
+        
         const niche = document.getElementById("niche").value.trim();
         const location = document.getElementById("location").value.trim();
         const limit = document.getElementById("limit").value;
         const force = document.getElementById("force").checked;
 
         // Reset submit button and terminal state
-        document.getElementById("btn-submit").setAttribute("disabled", "true");
-        document.getElementById("btn-text").textContent = "Running...";
-        document.getElementById("btn-spinner").style.display = "inline-block";
+        setPipelineRunningState(true);
         
         const consoleBox = document.getElementById("console");
         consoleBox.innerHTML = "";
@@ -942,12 +1010,12 @@
                 pollInterval = setInterval(pollStatus, 1500);
             } else {
                 appendLogLine("Error: " + data.message);
-                resetRunControls();
+                setPipelineRunningState(false);
             }
         })
         .catch(err => {
             appendLogLine("Network Error: " + err);
-            resetRunControls();
+            setPipelineRunningState(false);
         });
     });
 
@@ -962,18 +1030,21 @@
                     lastLogIndex = data.last_index;
                 }
 
-                if (data.status === "completed" || data.status === "failed") {
+                if (data.status === "completed" || data.status === "failed" || data.status === "idle") {
                     clearInterval(pollInterval);
-                    resetRunControls();
+                    setPipelineRunningState(false);
                     loadLeads();
                     
                     document.getElementById("spinner-status").style.display = "none";
                     if (data.status === "completed") {
                         document.getElementById("status-summary-text").textContent = "Audit run completed!";
                         document.getElementById("status-summary").className = "badge badge-success";
-                    } else {
+                    } else if (data.status === "failed") {
                         document.getElementById("status-summary-text").textContent = "Audit run failed.";
                         document.getElementById("status-summary").className = "badge badge-danger";
+                    } else {
+                        document.getElementById("status-summary-text").textContent = "Audit run stopped.";
+                        document.getElementById("status-summary").className = "badge badge-warning";
                     }
                 }
             })
@@ -982,6 +1053,10 @@
             });
     }
 
+    function resetRunControls() {
+        setPipelineRunningState(false);
+    }
+    
     function appendLogLine(text) {
         const consoleBox = document.getElementById("console");
         const div = document.createElement("div");

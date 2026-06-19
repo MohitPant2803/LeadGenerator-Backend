@@ -116,6 +116,12 @@ def run_agent():
     
     return jsonify({"status": "success", "message": "Pipeline started successfully."})
 
+@app.route("/api/cancel", methods=["POST"])
+def cancel_pipeline():
+    logger.info("Pipeline cancellation requested by user via API.")
+    pipeline_cancel_event.set()
+    return jsonify({"status": "success", "message": "Pipeline cancellation requested."})
+
 @app.route("/api/status", methods=["GET"])
 def get_status():
     last_seen = int(request.args.get("last_index", 0))
