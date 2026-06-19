@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Generator & SEO Audit Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            
+            --success: #10b981;
+            --success-light: #ecfdf5;
+            
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            
+            --warning: #f59e0b;
+            
+            --console-bg: #f8fafc;
+            --console-text: #334155;
+            --console-border: #cbd5e1;
+            
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+            
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styling */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            color: var(--primary);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 0.1rem;
+        }
+
+        /* Top Grid Layout */
+        .grid-top {
+            display: grid;
+            grid-template-columns: 4fr 6fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .grid-top {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            #download-db-container {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 0.5rem !important;
+            }
+            #download-db-container .btn-action-download {
+                width: 100% !important;
+            }
+        }
+
+        /* Card panels */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem;
+            transition: box-shadow 0.2s ease;
+            min-width: 0;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .card-title svg {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        /* Input Controls */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 550;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            background-color: #f8fafc;
+            transition: all 0.15s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1.25rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-group input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-group span {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 550;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            background-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #e2e8f0;
+        }
+
+        .btn-secondary:disabled {
+            background-color: #f8fafc;
+            color: #cbd5e1;
+            border-color: #f1f5f9;
+            cursor: not-allowed;
+        }
+
+        .btn-action-download {
+            width: auto;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        /* Console Output Box */
+        .console-container {
+            display: flex;
+            flex-direction: column;
+            height: 200px;
+        }
+
+        .console-box {
+            height: 100%;
+            background-color: var(--console-bg);
+            border: 1px solid var(--console-border);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--console-text);
+            overflow-y: auto;
+            overflow-x: auto;
+            white-space: pre;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .log-line {
+            margin-bottom: 0.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 0.25rem;
+        }
+
+        /* Progress Bar / Spinner */
+        .spinner-ring {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        .spinner-ring.dark {
+            border-top-color: var(--primary);
+            border-color: rgba(37,99,235,0.1);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Leads Section */
+        .leads-section {
+            margin-top: 1.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* Results Table */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 0.85rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.03em;
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .badge-warning {
+            background-color: #fffbeb;
+            color: var(--warning);
+        }
+
+        .badge-primary {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .email-badge {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            margin: 1px;
+        }
+
+        .phone-badge {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+            margin: 1px;
+            font-size: 0.82rem;
+            padding: 0.25rem 0.6rem;
+            font-weight: 550;
+        }
+
+        .score-pill {
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .score-priority-high {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .score-priority-med {
+            background-color: #fffbeb;
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .score-priority-low {
+            background-color: var(--success-light);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Checkbox Audit Indicators */
+        .audit-indicator-grid {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Modal popup dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.25rem;
+            width: auto;
+            display: flex;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .email-pre {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            font-family: inherit;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            color: var(--text-primary);
+            user-select: text;
+        }
+
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .btn-modal-action {
+            width: auto;
+        }
+
+        .empty-state {
+            padding: 3rem 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .action-cell {
+            white-space: nowrap;
+        }
+
+        .btn-table-action {
+            padding: 0.4rem 0.85rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        #download-db-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo-container">
+            <!-- SVG Main Icon (Globe/Audit theme) -->
+            <svg class="logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <div>
+                <h1>Lead Generator & Audit Agent</h1>
+                <p class="subtitle">Discover local business leads, run instant tech audits, and draft outreach emails</p>
+            </div>
+        </div>
+        <div id="download-db-container">
+            <button id="btn-download" class="btn-secondary btn-action-download" disabled>
+                <!-- SVG Download Icon -->
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Excel
+            </button>
+            <button id="btn-copy-excel" class="btn-secondary btn-action-download" disabled>
+                <!-- SVG Copy Icon -->
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                Copy Excel Data
+            </button>
+        </div>
+    </header>
+
+    <div class="grid-top">
+        <!-- Input Form Card -->
+        <div class="card">
+            <div class="card-title">
+                <!-- SVG Settings Icon -->
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Pipeline Controls
+            </div>
+            
+            <form id="run-form">
+                <div class="form-group">
+                    <label for="niche">Niche / Category</label>
+                    <input type="text" id="niche" placeholder="e.g. dentists, catering.restaurant" required value="dentists">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" placeholder="e.g. Dallas, TX" required value="Dallas">
+                    </div>
+                    <div class="form-group">
+                        <label for="limit">Lead Limit</label>
+                        <input type="number" id="limit" min="1" max="50" value="3" required>
+                    </div>
+                </div>
+                <div class="checkbox-group" onclick="toggleCheckbox(event)">
+                    <input type="checkbox" id="force">
+                    <span>Force audit refresh (ignore cache)</span>
+                </div>
+                
+                <button type="submit" id="btn-submit" class="btn-primary">
+                    <span id="btn-text">Run Pipeline</span>
+                    <span id="btn-spinner" class="spinner-ring" style="display: none;"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Terminal Logs Card -->
+        <div class="card">
+            <div class="card-title">
+                <!-- SVG Console Icon -->
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Execution Terminal
+            </div>
+            <div class="console-container">
+                <div id="console" class="console-box">System idle. Ready to start...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leads Display Section -->
+    <div class="leads-section">
+        <div class="section-header">
+            <h2 class="section-title">Audit Results & Leads</h2>
+            <div id="status-summary" class="badge badge-primary" style="display: none;">
+                <span id="spinner-status" class="spinner-ring dark" style="display: none; margin-right: 4px;"></span>
+                <span id="status-summary-text">Ready</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="leads-table">
+                <thead>
+                    <tr>
+                        <th style="width: 13%;">Opportunity Score</th>
+                        <th style="width: 22%;">Business Info</th>
+                        <th style="width: 27%;">Audit checklist</th>
+                        <th style="width: 17%;">Phone Numbers</th>
+                        <th style="width: 12%;">Emails Found</th>
+                        <th style="width: 9%;">Outreach Draft</th>
+                    </tr>
+                </thead>
+                <tbody id="leads-tbody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <!-- SVG File Search Icon -->
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                                <p>No leads loaded yet. Run a pipeline search above to gather auditing data.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Email Modal Overlay -->
+<div id="email-modal" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">Outreach Email Draft</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <!-- SVG Close X Icon -->
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <h4 id="email-biz-name" style="margin-bottom: 0.75rem; font-weight: 600;"></h4>
+            <div id="email-content" class="email-pre"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary btn-modal-action" onclick="closeModal()">Close</button>
+            <button id="btn-copy-email" class="btn-primary btn-modal-action">
+                <!-- SVG Copy Icon -->
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                Copy Content
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pollInterval = null;
+    let lastLogIndex = 0;
+    let selectedEmailText = "";
+    let lastNiche = "";
+    let lastLocation = "";
+    let lastLimit = "";
+
+    // Toggle checkbox helper on text click
+    function toggleCheckbox(e) {
+        if (e.target.tagName !== 'INPUT') {
+            const cb = document.getElementById('force');
+            cb.checked = !cb.checked;
+        }
+    }
+
+    // Load existing database data on dashboard open
+    window.addEventListener("DOMContentLoaded", () => {
+        lastNiche = document.getElementById("niche").value.trim();
+        lastLocation = document.getElementById("location").value.trim();
+        lastLimit = document.getElementById("limit").value.trim();
+        
+        loadLeads();
+        updateRunButtonState();
+    });
+
+    // Reactive input listeners to filter table in real time and manage run button state
+    document.getElementById("niche").addEventListener("change", () => {
+        loadLeads();
+        updateRunButtonState();
+    });
+    document.getElementById("location").addEventListener("change", () => {
+        loadLeads();
+        updateRunButtonState();
+    });
+    document.getElementById("niche").addEventListener("input", () => {
+        loadLeads();
+        updateRunButtonState();
+    });
+    document.getElementById("location").addEventListener("input", () => {
+        loadLeads();
+        updateRunButtonState();
+    });
+    document.getElementById("limit").addEventListener("change", updateRunButtonState);
+    document.getElementById("limit").addEventListener("input", updateRunButtonState);
+
+    function updateRunButtonState() {
+        const niche = document.getElementById("niche").value.trim();
+        const location = document.getElementById("location").value.trim();
+        const limit = document.getElementById("limit").value.trim();
+        const btn = document.getElementById("btn-submit");
+        
+        // If the pipeline is currently running, keep it disabled
+        const btnText = document.getElementById("btn-text").textContent;
+        if (btnText === "Running...") {
+            btn.setAttribute("disabled", "true");
+            return;
+        }
+        
+        // Disable button if form fields match the last executed run
+        if (niche === lastNiche && location === lastLocation && limit === lastLimit) {
+            btn.setAttribute("disabled", "true");
+        } else {
+            // Only enable if both niche and location are non-empty and limit is valid
+            if (niche && location && limit && parseInt(limit) > 0) {
+                btn.removeAttribute("disabled");
+            } else {
+                btn.setAttribute("disabled", "true");
+            }
+        }
+    }
+
+    function loadLeads() {
+        const niche = document.getElementById("niche").value.trim();
+        const location = document.getElementById("location").value.trim();
+        
+        let url = "/api/leads";
+        if (niche && location) {
+            url += `?niche=${encodeURIComponent(niche)}&location=${encodeURIComponent(location)}`;
+        } else if (niche) {
+            url += `?niche=${encodeURIComponent(niche)}`;
+        } else if (location) {
+            url += `?location=${encodeURIComponent(location)}`;
+        }
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success" && data.leads.length > 0) {
+                    renderLeadsTable(data.leads);
+                    document.getElementById("btn-download").removeAttribute("disabled");
+                    document.getElementById("btn-copy-excel").removeAttribute("disabled");
+                } else {
+                    renderEmptyTable();
+                    document.getElementById("btn-download").setAttribute("disabled", "true");
+                    document.getElementById("btn-copy-excel").setAttribute("disabled", "true");
+                }
+            })
+            .catch(err => console.error("Error loading leads:", err));
+    }
+
+    function renderEmptyTable() {
+        const tbody = document.getElementById("leads-tbody");
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                        <p>No leads found matching the current search parameters.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Submit handler to trigger Flask background worker
+    document.getElementById("run-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        const niche = document.getElementById("niche").value.trim();
+        const location = document.getElementById("location").value.trim();
+        const limit = document.getElementById("limit").value;
+        const force = document.getElementById("force").checked;
+
+        // Reset submit button and terminal state
+        document.getElementById("btn-submit").setAttribute("disabled", "true");
+        document.getElementById("btn-text").textContent = "Running...";
+        document.getElementById("btn-spinner").style.display = "inline-block";
+        
+        const consoleBox = document.getElementById("console");
+        consoleBox.innerHTML = "";
+        lastLogIndex = 0;
+
+        // Show status indicator
+        document.getElementById("status-summary").style.display = "inline-flex";
+        document.getElementById("spinner-status").style.display = "inline-block";
+        document.getElementById("status-summary-text").textContent = "Running pipeline audits...";
+
+        fetch("/api/run", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ niche, location, limit, force })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                // Update the last run values only on success
+                lastNiche = niche;
+                lastLocation = location;
+                lastLimit = limit;
+                pollInterval = setInterval(pollStatus, 1500);
+            } else {
+                appendLogLine("Error: " + data.message);
+                resetRunControls();
+            }
+        })
+        .catch(err => {
+            appendLogLine("Network Error: " + err);
+            resetRunControls();
+        });
+    });
+
+    function pollStatus() {
+        fetch(`/api/status?last_index=${lastLogIndex}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(line => {
+                        appendLogLine(line);
+                    });
+                    lastLogIndex = data.last_index;
+                }
+
+                if (data.status === "completed" || data.status === "failed") {
+                    clearInterval(pollInterval);
+                    resetRunControls();
+                    loadLeads();
+                    
+                    document.getElementById("spinner-status").style.display = "none";
+                    if (data.status === "completed") {
+                        document.getElementById("status-summary-text").textContent = "Audit run completed!";
+                        document.getElementById("status-summary").className = "badge badge-success";
+                    } else {
+                        document.getElementById("status-summary-text").textContent = "Audit run failed.";
+                        document.getElementById("status-summary").className = "badge badge-danger";
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Polling logs failed:", err);
+            });
+    }
+
+    function appendLogLine(text) {
+        const consoleBox = document.getElementById("console");
+        const div = document.createElement("div");
+        div.className = "log-line";
+        div.textContent = text;
+        consoleBox.appendChild(div);
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    function resetRunControls() {
+        document.getElementById("btn-text").textContent = "Run Pipeline";
+        document.getElementById("btn-spinner").style.display = "none";
+        updateRunButtonState();
+    }
+
+    // Download Excel trigger
+    document.getElementById("btn-download").addEventListener("click", () => {
+        const niche = document.getElementById("niche").value.trim();
+        const location = document.getElementById("location").value.trim();
+        let url = "/api/download_excel";
+        if (niche && location) {
+            url += `?niche=${encodeURIComponent(niche)}&location=${encodeURIComponent(location)}`;
+        }
+        window.location.href = url;
+    });
+
+    // Copy Excel data trigger (TSV to clipboard)
+    document.getElementById("btn-copy-excel").addEventListener("click", () => {
+        const niche = document.getElementById("niche").value.trim();
+        const location = document.getElementById("location").value.trim();
+        
+        let url = "/api/leads";
+        if (niche && location) {
+            url += `?niche=${encodeURIComponent(niche)}&location=${encodeURIComponent(location)}`;
+        }
+        
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success" && data.leads.length > 0) {
+                    const headers = ["Score", "Name", "Address", "Phone", "Website", "SSL", "Meta Title", "Meta Desc", "Robots.txt", "Sitemap", "Google Analytics", "PageSpeed", "Emails", "Email Draft"];
+                    let tsv = headers.join("\t") + "\n";
+                    
+                    data.leads.forEach(l => {
+                        const row = [
+                            l.score.toFixed(1),
+                            l.name,
+                            l.address,
+                            l.phone || "",
+                            l.website || "",
+                            l.has_ssl ? "YES" : "NO",
+                            l.has_title ? "YES" : "NO",
+                            l.has_description ? "YES" : "NO",
+                            l.has_robots ? "YES" : "NO",
+                            l.has_sitemap ? "YES" : "NO",
+                            l.has_google_analytics ? "YES" : "NO",
+                            l.pagespeed_score !== null ? l.pagespeed_score : "N/A",
+                            l.emails ? l.emails.join(", ") : "",
+                            (l.email_draft || "").replace(/\n/g, "  ").replace(/\t/g, " ")
+                        ];
+                        tsv += row.join("\t") + "\n";
+                    });
+                    
+                    navigator.clipboard.writeText(tsv)
+                        .then(() => {
+                            const btn = document.getElementById("btn-copy-excel");
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = `
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Copied!
+                            `;
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error("Could not copy Excel data:", err);
+                        });
+                }
+            })
+            .catch(err => console.error("Error copying Excel data:", err));
+    });
+
+    // Render SQLite results into the DOM
+    function renderLeadsTable(leads) {
+        const tbody = document.getElementById("leads-tbody");
+        tbody.innerHTML = "";
+
+        leads.forEach(lead => {
+            const tr = document.createElement("tr");
+
+            // 1. Opportunity Score cell
+            const scoreTd = document.createElement("td");
+            let scoreClass = "score-priority-low";
+            if (lead.score < 60) scoreClass = "score-priority-high";
+            else if (lead.score < 80) scoreClass = "score-priority-med";
+            
+            scoreTd.innerHTML = `<span class="score-pill ${scoreClass}">${lead.score.toFixed(1)} / 100</span>`;
+            tr.appendChild(scoreTd);
+
+            // 2. Business Info cell (Name, Address, Website)
+            const infoTd = document.createElement("td");
+            let websiteMarkup = "";
+            if (lead.website) {
+                websiteMarkup = `
+                    <div style="margin-top: 0.25rem;">
+                        <a href="${lead.website}" target="_blank" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem;">
+                            <!-- SVG Globe Icon -->
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            ${lead.website}
+                        </a>
+                    </div>
+                `;
+            }
+            infoTd.innerHTML = `
+                <div style="font-weight: 600; font-size: 0.95rem;">${lead.name}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.1rem;">${lead.address}</div>
+                ${websiteMarkup}
+            `;
+            tr.appendChild(infoTd);
+
+            // 3. Technical Audits Indicators cell
+            const auditTd = document.createElement("td");
+            
+            const makeIndicator = (flag, label) => {
+                const isSuccess = Boolean(flag);
+                const className = isSuccess ? 'badge-success' : 'badge-danger';
+                
+                const icon = isSuccess ? 
+                    `<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>` : 
+                    `<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                
+                return `<span class="badge ${className}">${icon} ${label}</span>`;
+            };
+
+            const pageSpeedVal = lead.pagespeed_score;
+            let speedBadge = "";
+            if (pageSpeedVal !== null && pageSpeedVal !== undefined) {
+                let speedClass = "badge-success";
+                if (pageSpeedVal < 60) speedClass = "badge-danger";
+                else if (pageSpeedVal < 80) speedClass = "badge-warning";
+                speedBadge = `<span class="badge ${speedClass}">Speed: ${pageSpeedVal}/100</span>`;
+            } else {
+                speedBadge = `<span class="badge badge-warning">Speed: N/A</span>`;
+            }
+
+            auditTd.innerHTML = `
+                <div class="audit-indicator-grid">
+                    ${makeIndicator(lead.has_ssl, "SSL")}
+                    ${makeIndicator(lead.has_title, "Meta Title")}
+                    ${makeIndicator(lead.has_description, "Meta Desc")}
+                    ${makeIndicator(lead.has_robots, "Robots.txt")}
+                    ${makeIndicator(lead.has_sitemap, "Sitemap.xml")}
+                    ${makeIndicator(lead.has_google_analytics, "Google Analytics")}
+                    ${speedBadge}
+                </div>
+            `;
+            tr.appendChild(auditTd);
+
+            // 4. Phone Numbers cell
+            const phoneTd = document.createElement("td");
+            if (lead.phone) {
+                phoneTd.innerHTML = `<span class="badge phone-badge">${lead.phone}</span>`;
+            } else {
+                phoneTd.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">No phone found</span>`;
+            }
+            tr.appendChild(phoneTd);
+
+            // 5. Emails cell
+            const emailTd = document.createElement("td");
+            if (lead.emails && lead.emails.length > 0) {
+                let emailsHtml = "";
+                lead.emails.forEach(email => {
+                    emailsHtml += `<span class="badge email-badge">${email}</span>`;
+                });
+                emailTd.innerHTML = `<div style="max-height: 80px; overflow-y: auto;">${emailsHtml}</div>`;
+            } else {
+                emailTd.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">No emails found</span>`;
+            }
+            tr.appendChild(emailTd);
+
+            // 6. Outreach Action cell
+            const actionTd = document.createElement("td");
+            actionTd.className = "action-cell";
+            if (lead.email_draft) {
+                const btn = document.createElement("button");
+                btn.className = "btn-secondary btn-table-action";
+                btn.textContent = "View Draft";
+                btn.addEventListener("click", () => {
+                    openModal(lead.name, lead.email_draft);
+                });
+                actionTd.appendChild(btn);
+            } else {
+                actionTd.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-secondary);">N/A</span>`;
+            }
+            tr.appendChild(actionTd);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Modal popup management
+    function openModal(bizName, emailDraft) {
+        document.getElementById("email-biz-name").textContent = bizName;
+        const contentBox = document.getElementById("email-content");
+        contentBox.textContent = emailDraft;
+        selectedEmailText = emailDraft;
+        document.getElementById("email-modal").classList.add("active");
+        
+        const copyBtn = document.getElementById("btn-copy-email");
+        copyBtn.innerHTML = `
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+            Copy Content
+        `;
+    }
+
+    function closeModal() {
+        document.getElementById("email-modal").classList.remove("active");
+    }
+
+    document.getElementById("btn-copy-email").addEventListener("click", () => {
+        if (!selectedEmailText) return;
+        navigator.clipboard.writeText(selectedEmailText)
+            .then(() => {
+                const btn = document.getElementById("btn-copy-email");
+                btn.innerHTML = `
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Copied!
+                `;
+            })
+            .catch(err => {
+                console.error("Could not copy email:", err);
+            });
+    });
+
+    document.getElementById("email-modal").addEventListener("click", (e) => {
+        if (e.target.id === "email-modal") {
+            closeModal();
+        }
+    });
+</script>
+
+</body>
+</html>

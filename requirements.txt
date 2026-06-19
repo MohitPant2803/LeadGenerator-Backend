@@ -1,0 +1,10 @@
+python-dotenv
+requests
+beautifulsoup4
+google-generativeai
+groq
+flask
+flask-cors
+gunicorn
+pandas
+openpyxl
