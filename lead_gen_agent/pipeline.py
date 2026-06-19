@@ -29,7 +29,7 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
     init_db()
     
     # 2. Run Lead Discovery (Geoapify Places API)
-    discovery_limit = 500
+    discovery_limit = max(limit * 3, 500)
     try:
         discovered_leads = discover_businesses(niche, location, limit=discovery_limit)
     except Exception as e:
