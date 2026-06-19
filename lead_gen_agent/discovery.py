@@ -171,23 +171,18 @@ def discover_businesses(niche: str, location: str, limit: int = 10):
         if not place_id:
             continue
             
-        # Fetch details to get contact details (phone, website)
-        details = get_place_details(place_id, GEOAPIFY_API_KEY)
-        
-        # Merge properties, prioritizing details
-        name = details.get("name") or prop.get("name") or "Unknown Business"
+        # Extract details directly from initial properties to avoid slow sequential API calls
+        name = prop.get("name") or "Unknown Business"
         address = (
-            details.get("formatted") or 
-            details.get("address_line2") or 
-            details.get("address_line1") or 
             prop.get("formatted") or 
             prop.get("address_line2") or 
+            prop.get("address_line1") or 
             "Unknown Address"
         )
         
-        contact = details.get("contact") or prop.get("contact") or {}
+        contact = prop.get("contact") or {}
         phone = contact.get("phone") if isinstance(contact, dict) else None
-        website = details.get("website") or prop.get("website")
+        website = prop.get("website")
         
         lead_dict = {
             "place_id": place_id,
