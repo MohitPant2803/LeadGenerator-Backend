@@ -143,3 +143,15 @@ def is_lead_processed(place_id, db_path=DB_PATH):
     if row and row["status"] == "processed":
         return True
     return False
+
+def get_processed_lead_count(niche, location, db_path=DB_PATH):
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM leads WHERE LOWER(niche) = ? AND LOWER(location) = ? AND status = 'processed'",
+        (niche.lower(), location.lower())
+    )
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
+

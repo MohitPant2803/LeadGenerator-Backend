@@ -6,7 +6,8 @@ from lead_gen_agent.storage import (
     save_discovered_leads,
     get_lead,
     update_lead,
-    is_lead_processed
+    is_lead_processed,
+    get_processed_lead_count
 )
 from lead_gen_agent.discovery import discover_businesses
 from lead_gen_agent.enrichment import enrich_business_website
@@ -28,8 +29,16 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
     # 1. Initialize SQLite Database
     init_db()
     
+    # Early Exit Check: Skip if database already contains enough processed leads and force is False
+    if not force:
+        existing_processed = get_processed_lead_count(niche, location)
+        if existing_processed >= limit:
+            logger.info(f"Database already contains {existing_processed} processed leads for niche='{niche}', location='{location}' (limit={limit}). skipping discovery and analysis.")
+            return
+            
     # 2. Run Lead Discovery (Geoapify Places API)
-    discovery_limit = max(limit * 3, 500)
+    # Dynamic discovery limit: 5 times the limit, minimum 50, maximum 500
+    discovery_limit = min(max(limit * 5, 50), 500)
     try:
         discovered_leads = discover_businesses(niche, location, limit=discovery_limit)
     except Exception as e:
