@@ -5,7 +5,7 @@ import urllib.robotparser
 from urllib.parse import urlparse, urljoin
 import time
 import random
-from lead_gen_agent.config import logger
+from lead_gen_agent.config import logger, safe_requests_get
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 EMAIL_REGEX = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
@@ -23,8 +23,7 @@ def get_robots_parser(base_url):
     rp.set_url(robots_url)
     try:
         # Prevent long hangs on reading robots.txt
-        requests_session = requests.Session()
-        resp = requests_session.get(robots_url, headers={"User-Agent": USER_AGENT}, timeout=5)
+        resp = safe_requests_get(robots_url, headers={"User-Agent": USER_AGENT}, timeout=5)
         if resp.status_code == 200:
             lines = resp.text.splitlines()
             rp.parse(lines)
@@ -75,7 +74,7 @@ def fetch_url(url):
     
     headers = {"User-Agent": USER_AGENT}
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = safe_requests_get(url, headers=headers, timeout=10)
         # Handle redirects and keep track of actual URL
         if response.status_code == 200:
             return response
@@ -171,7 +170,7 @@ def search_email_ddg(query: str):
                 return []
         except ImportError:
             time.sleep(random.uniform(1.5, 3.0))
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = safe_requests_get(url, headers=headers, timeout=10)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, 'html.parser')
             snippets = []
