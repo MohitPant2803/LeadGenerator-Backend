@@ -134,7 +134,7 @@ def get_pagespeed_data(url: str):
     }
     
     try:
-        response = requests.get(api_url, params=params, timeout=40)
+        response = requests.get(api_url, params=params, timeout=20)
         if response.status_code == 200:
             data = response.json()
             # Extract score
@@ -192,6 +192,7 @@ def analyze_website(website_url: str):
     # 1. Fetch homepage content
     html_content = ""
     direct_fetch_success = False
+    dns_failed = False
     try:
         resp = requests.get(website_url, headers={"User-Agent": USER_AGENT}, timeout=10, verify=False)
         if resp.status_code == 200:
@@ -199,8 +200,28 @@ def analyze_website(website_url: str):
             base_url = resp.url # Update base URL if there was redirect
             domain = urlparse(base_url).netloc
             direct_fetch_success = True
+    except requests.exceptions.ConnectionError as ce:
+        err_msg = str(ce)
+        if "NameResolutionError" in err_msg or "gaierror" in err_msg or "Failed to resolve" in err_msg:
+            logger.warning(f"Domain resolution failed for {website_url}. Skipping further website audits.")
+            dns_failed = True
+        else:
+            logger.warning(f"Could not fetch homepage for analysis on {website_url}: {ce}")
     except Exception as e:
         logger.warning(f"Could not fetch homepage for analysis on {website_url}: {e}")
+        
+    if dns_failed:
+        results = {
+            "has_ssl": False,
+            "has_title": False,
+            "has_description": False,
+            "has_robots": False,
+            "has_sitemap": False,
+            "has_google_analytics": False,
+            "pagespeed_score": None
+        }
+        logger.info(f"Audit results for {website_url}: {results}")
+        return results
         
     # 2. SSL check
     has_ssl = check_ssl(domain)
