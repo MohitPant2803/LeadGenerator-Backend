@@ -29,8 +29,9 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
     init_db()
     
     # 2. Run Lead Discovery (Geoapify Places API)
+    discovery_limit = max(limit * 3, 20)
     try:
-        discovered_leads = discover_businesses(niche, location, limit=limit)
+        discovered_leads = discover_businesses(niche, location, limit=discovery_limit)
     except Exception as e:
         logger.error(f"Discovery step failed critically: {e}")
         sys.exit(1)
@@ -62,6 +63,10 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
         if is_lead_processed(place_id) and not force:
             logger.info(f"Lead '{business_name}' is already processed (caching hit). Skipping.")
             skipped_count += 1
+            processed_count += 1
+            if processed_count >= limit:
+                logger.info(f"Reached requested limit of {limit} valid leads (including caching hits). Ending loop.")
+                break
             continue
             
         # Retrieve the lead from DB to get the website stored (in case it differs or contains extra info)
@@ -72,21 +77,8 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
             
         website = lead_data.get("website")
         if not website:
-            logger.warning(f"Lead '{business_name}' has no website. Marking as processed with empty audit.")
-            update_lead(place_id, {
-                "emails": [],
-                "has_ssl": 0,
-                "has_title": 0,
-                "has_description": 0,
-                "has_robots": 0,
-                "has_sitemap": 0,
-                "has_google_analytics": 0,
-                "pagespeed_score": None,
-                "score": 0.0,
-                "email_draft": "No website available to generate email outreach.",
-                "status": "processed"
-            })
-            processed_count += 1
+            logger.warning(f"Lead '{business_name}' has no website. Discarding.")
+            update_lead(place_id, {"status": "discarded"})
             continue
             
         # Wrap all network / scraping / API calls in try/except so one failure doesn't halt the pipeline
@@ -103,6 +95,7 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
             # B. Technical & SEO Analysis (meta tags, SSL, robots, sitemap, GA, PageSpeed)
             logger.info(f"[{business_name}] Step 2: Running SEO & Tech Audits...")
             audit_results = {
+                "dns_failed": False,
                 "has_ssl": False,
                 "has_title": False,
                 "has_description": False,
@@ -115,6 +108,11 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
                 audit_results = analyze_website(website)
             except Exception as e:
                 logger.error(f"[{business_name}] SEO/Tech analysis failed: {e}")
+                
+            if audit_results.get("dns_failed"):
+                logger.warning(f"[{business_name}] Website DNS resolution failed. Discarding lead.")
+                update_lead(place_id, {"status": "discarded"})
+                continue
                 
             # C. Scoring
             logger.info(f"[{business_name}] Step 3: Scoring lead...")
@@ -151,6 +149,10 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
             logger.info(f"[{business_name}] Lead processed successfully. Prioritization Score: {score}/100.0")
             processed_count += 1
             
+            if processed_count >= limit:
+                logger.info(f"Reached requested limit of {limit} valid leads. Ending loop.")
+                break
+            
         except Exception as e:
             logger.error(f"[{business_name}] Unexpected critical error during processing: {e}")
             update_lead(place_id, {"status": "failed"})
@@ -158,7 +160,7 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
             
     logger.info("=" * 60)
     logger.info("Pipeline Execution Summary:")
-    logger.info(f"  Processed: {processed_count}")
+    logger.info(f"  Processed (valid): {processed_count}")
     logger.info(f"  Skipped (cached): {skipped_count}")
     logger.info(f"  Failed: {failed_count}")
     logger.info("=" * 60)

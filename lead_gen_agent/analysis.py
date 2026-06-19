@@ -212,6 +212,7 @@ def analyze_website(website_url: str):
         
     if dns_failed:
         results = {
+            "dns_failed": True,
             "has_ssl": False,
             "has_title": False,
             "has_description": False,
@@ -249,6 +250,7 @@ def analyze_website(website_url: str):
             has_robots = ps_seo_audits["has_robots"]
             
     results = {
+        "dns_failed": False,
         "has_ssl": has_ssl,
         "has_title": has_title,
         "has_description": has_description,
