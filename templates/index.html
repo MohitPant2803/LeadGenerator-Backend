@@ -765,6 +765,7 @@
     let lastLocation = "";
     let lastLimit = "";
     let isRunningState = false;
+    let hasRunCompleted = false;
 
     // Toggle checkbox helper on text click
     function toggleCheckbox(e) {
@@ -812,6 +813,7 @@
             .then(data => {
                 if (data.status === "running") {
                     setPipelineRunningState(true);
+                    renderLoadingTable();
                     pollInterval = setInterval(pollStatus, 1500);
                 }
             })
@@ -896,12 +898,29 @@
                     document.getElementById("btn-download").removeAttribute("disabled");
                     document.getElementById("btn-copy-excel").removeAttribute("disabled");
                 } else {
-                    renderEmptyTable(data.reason, data.suggestions);
+                    renderEmptyTable(hasRunCompleted ? data.reason : null, hasRunCompleted ? data.suggestions : null);
                     document.getElementById("btn-download").setAttribute("disabled", "true");
                     document.getElementById("btn-copy-excel").setAttribute("disabled", "true");
                 }
             })
             .catch(err => console.error("Error loading leads:", err));
+    }
+
+    function renderLoadingTable() {
+        const tbody = document.getElementById("leads-tbody");
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state" style="padding: 3rem 1.5rem;">
+                        <span class="spinner-ring dark" style="width: 32px; height: 32px; border-width: 3px; margin-bottom: 1rem; border-top-color: var(--primary);"></span>
+                        <p style="font-weight: 500; font-size: 0.95rem; color: var(--text-primary);">Pipeline is running...</p>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Leads will appear here as soon as the audit completes.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        document.getElementById("btn-download").setAttribute("disabled", "true");
+        document.getElementById("btn-copy-excel").setAttribute("disabled", "true");
     }
 
     function renderEmptyTable(reason, suggestions) {
@@ -983,6 +1002,7 @@
 
         // Reset submit button and terminal state
         setPipelineRunningState(true);
+        renderLoadingTable();
         
         const consoleBox = document.getElementById("console");
         consoleBox.innerHTML = "";
@@ -1033,19 +1053,23 @@
                 if (data.status === "completed" || data.status === "failed" || data.status === "idle") {
                     clearInterval(pollInterval);
                     setPipelineRunningState(false);
-                    loadLeads();
                     
                     document.getElementById("spinner-status").style.display = "none";
                     if (data.status === "completed") {
+                        hasRunCompleted = true;
                         document.getElementById("status-summary-text").textContent = "Audit run completed!";
                         document.getElementById("status-summary").className = "badge badge-success";
                     } else if (data.status === "failed") {
+                        hasRunCompleted = true;
                         document.getElementById("status-summary-text").textContent = "Audit run failed.";
                         document.getElementById("status-summary").className = "badge badge-danger";
                     } else {
+                        hasRunCompleted = false;
                         document.getElementById("status-summary-text").textContent = "Audit run stopped.";
                         document.getElementById("status-summary").className = "badge badge-warning";
                     }
+                    
+                    loadLeads();
                 }
             })
             .catch(err => {
