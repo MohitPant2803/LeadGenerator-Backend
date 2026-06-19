@@ -3,11 +3,13 @@ import threading
 import logging
 import json
 from flask import Flask, render_template, jsonify, request, send_file
+from flask_cors import CORS
 from lead_gen_agent.config import DB_PATH, log_format, logger
 from lead_gen_agent.storage import init_db, get_connection
 from lead_gen_agent.pipeline import run_pipeline, pipeline_cancel_event
 
 app = Flask(__name__)
+CORS(app)
 
 # Thread-safe log accumulator
 class InMemoryLogHandler(logging.Handler):
