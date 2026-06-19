@@ -30,6 +30,20 @@ NICHE_TO_CATEGORY = {
     "offices": "commercial.office",
     "bank": "commercial.bank",
     "banks": "commercial.bank",
+    "grocery": "commercial.supermarket",
+    "groceries": "commercial.supermarket",
+    "supermarket": "commercial.supermarket",
+    "supermarkets": "commercial.supermarket",
+    "bakery": "commercial.food_and_drink.bakery",
+    "bakeries": "commercial.food_and_drink.bakery",
+    "pharmacy": "healthcare.pharmacy",
+    "pharmacies": "healthcare.pharmacy",
+    "hospital": "healthcare.hospital",
+    "hospitals": "healthcare.hospital",
+    "laundry": "service.laundry",
+    "mechanic": "service.car_repair",
+    "car repair": "service.car_repair",
+    "gas station": "service.vehicle.fuel",
 }
 
 def geocode_location(location_name: str, api_key: str):

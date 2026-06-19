@@ -127,6 +127,40 @@ def get_status():
         "last_index": current_length
     })
 
+def get_spelling_suggestions(niche):
+    valid_keys = [
+        "restaurant", "restaurants", "cafe", "cafes", "bar", "bars",
+        "dentist", "dentists", "doctor", "doctors", "hotel", "hotels",
+        "gym", "gyms", "salon", "salons", "spa", "spas", "plumber",
+        "plumbers", "locksmith", "locksmiths", "school", "schools",
+        "office", "offices", "bank", "banks", "grocery", "groceries",
+        "supermarket", "supermarkets", "bakery", "bakeries", "pharmacy",
+        "pharmacies", "hospital", "hospitals", "mechanic", "car repair"
+    ]
+    
+    def levenshtein(s1, s2):
+        if len(s1) < len(s2):
+            return levenshtein(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
+    suggestions = []
+    for key in valid_keys:
+        dist = levenshtein(niche.lower(), key)
+        if dist <= 2:
+            suggestions.append(key)
+    return suggestions
+
 @app.route("/api/leads", methods=["GET"])
 def get_leads():
     niche = request.args.get("niche", "").strip().lower()
@@ -167,7 +201,46 @@ def get_leads():
                 lead["emails"] = []
             leads_list.append(lead)
             
-        return jsonify({"status": "success", "leads": leads_list})
+        reason = None
+        suggestions = []
+        
+        if not leads_list and niche and location:
+            # Check geocoding first
+            try:
+                from lead_gen_agent.discovery import geocode_location
+                from lead_gen_agent.config import GEOAPIFY_API_KEY
+                geocode_location(location, GEOAPIFY_API_KEY)
+                location_ok = True
+            except Exception:
+                location_ok = False
+                reason = f"We couldn't resolve the location '{location}'. Please check your spelling."
+                
+            if location_ok:
+                from lead_gen_agent.discovery import NICHE_TO_CATEGORY
+                niche_clean = niche.strip().lower()
+                is_recognized = (
+                    niche_clean in NICHE_TO_CATEGORY or 
+                    "." in niche_clean or 
+                    "," in niche_clean
+                )
+                
+                spelling_suggestions = get_spelling_suggestions(niche_clean)
+                if spelling_suggestions:
+                    suggestions = spelling_suggestions
+                    reason = f"No businesses found for '{niche}' in '{location}'. Did you mean to search for: {', '.join(spelling_suggestions)}?"
+                elif not is_recognized:
+                    reason = f"The niche '{niche}' is not a recognized category. We tried searching for businesses with '{niche}' in their name near '{location}', but found 0 results."
+                    suggestions = ["grocery", "restaurant", "dentist", "plumber", "salon"]
+                else:
+                    reason = f"No businesses matching the category '{niche}' found within 10km of '{location}'."
+                    suggestions = []
+            
+        return jsonify({
+            "status": "success",
+            "leads": leads_list,
+            "reason": reason,
+            "suggestions": suggestions
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
