@@ -155,7 +155,7 @@ def run_pipeline(niche: str, location: str, limit: int, force: bool):
                 "status": "processed"
             }
             update_lead(place_id, update_data)
-            logger.info(f"[{business_name}] Lead processed successfully. Prioritization Score: {score}/100.0")
+            logger.info(f"[{business_name}] Lead processed successfully. Optimization Gaps: {int(score)}/7")
             processed_count += 1
             
             if processed_count >= limit:

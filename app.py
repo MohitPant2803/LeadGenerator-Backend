@@ -178,21 +178,21 @@ def get_leads():
         
         if niche and location:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(niche) = ? AND LOWER(location) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(niche) = ? AND LOWER(location) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (niche, location)
             )
         elif niche:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(niche) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(niche) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (niche,)
             )
         elif location:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(location) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(location) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (location,)
             )
         else:
-            cursor.execute("SELECT * FROM leads WHERE status = 'processed' ORDER BY score ASC, name ASC")
+            cursor.execute("SELECT * FROM leads WHERE status = 'processed' ORDER BY score DESC, name ASC")
             
         rows = cursor.fetchall()
         conn.close()
@@ -262,21 +262,21 @@ def download_excel():
         
         if niche and location:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(niche) = ? AND LOWER(location) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(niche) = ? AND LOWER(location) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (niche, location)
             )
         elif niche:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(niche) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(niche) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (niche,)
             )
         elif location:
             cursor.execute(
-                "SELECT * FROM leads WHERE LOWER(location) = ? AND status = 'processed' ORDER BY score ASC, name ASC",
+                "SELECT * FROM leads WHERE LOWER(location) = ? AND status = 'processed' ORDER BY score DESC, name ASC",
                 (location,)
             )
         else:
-            cursor.execute("SELECT * FROM leads WHERE status = 'processed' ORDER BY score ASC, name ASC")
+            cursor.execute("SELECT * FROM leads WHERE status = 'processed' ORDER BY score DESC, name ASC")
             
         rows = cursor.fetchall()
         conn.close()

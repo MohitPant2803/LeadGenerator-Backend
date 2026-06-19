@@ -702,7 +702,7 @@
             <table id="leads-table">
                 <thead>
                     <tr>
-                        <th style="width: 13%;">Opportunity Score</th>
+                        <th style="width: 13%;">Optimization Gaps</th>
                         <th style="width: 22%;">Business Info</th>
                         <th style="width: 27%;">Audit checklist</th>
                         <th style="width: 17%;">Phone Numbers</th>
@@ -1121,12 +1121,12 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === "success" && data.leads.length > 0) {
-                    const headers = ["Score", "Name", "Address", "Phone", "Website", "SSL", "Meta Title", "Meta Desc", "Robots.txt", "Sitemap", "Google Analytics", "PageSpeed", "Emails", "Email Draft"];
+                    const headers = ["Optimization Gaps", "Name", "Address", "Phone", "Website", "SSL", "Meta Title", "Meta Desc", "Robots.txt", "Sitemap", "Google Analytics", "PageSpeed", "Emails", "Email Draft"];
                     let tsv = headers.join("\t") + "\n";
                     
                     data.leads.forEach(l => {
                         const row = [
-                            l.score.toFixed(1),
+                            Math.round(l.score),
                             l.name,
                             l.address,
                             l.phone || "",
@@ -1174,13 +1174,13 @@
         leads.forEach(lead => {
             const tr = document.createElement("tr");
 
-            // 1. Opportunity Score cell
+            // 1. Optimization Gaps cell
             const scoreTd = document.createElement("td");
             let scoreClass = "score-priority-low";
-            if (lead.score < 60) scoreClass = "score-priority-high";
-            else if (lead.score < 80) scoreClass = "score-priority-med";
+            if (lead.score >= 5) scoreClass = "score-priority-high";
+            else if (lead.score >= 2) scoreClass = "score-priority-med";
             
-            scoreTd.innerHTML = `<span class="score-pill ${scoreClass}">${lead.score.toFixed(1)} / 100</span>`;
+            scoreTd.innerHTML = `<span class="score-pill ${scoreClass}">${Math.round(lead.score)} / 7 Gaps</span>`;
             tr.appendChild(scoreTd);
 
             // 2. Business Info cell (Name, Address, Website)
