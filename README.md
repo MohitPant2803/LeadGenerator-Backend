@@ -1,95 +1,146 @@
 # Local Lead Generation & SEO Audit Agent
 
-An autonomous Python-based agent that discovers local businesses via the Geoapify Places API, crawls their websites to extract contact info, performs a technical/SEO audit (including Google PageSpeed performance), scores leads based on priority opportunity, and drafts personalized outreach emails using free LLM APIs (Gemini 2.0 Flash Lite with a Groq Llama-3.1-8b-instant fallback).
+A production-grade Python-based autonomous agent designed to streamline lead prospecting for digital marketing agencies. The system finds local businesses using geolocation APIs, crawls their websites to extract direct contact information, runs a comprehensive technical and SEO audit, and drafts highly tailored cold outreach emails utilizing LLMs with built-in API rate-limit fallback.
+
+### Live Deployment
+*   **Web Dashboard:** [leadgenerator-backend-pzyw.onrender.com](https://leadgenerator-backend-pzyw.onrender.com)
 
 ---
 
-## Features
+### Dashboard Interface
 
-1. **Business Discovery**: Finds local businesses by geocoding a location and searching within a 10km radius using the **Geoapify Places API**.
-2. **Website Enrichment**: Scrapes each business's homepage, `/contact`, and `/about` pages to extract email addresses (respecting `robots.txt` and using modern User-Agents).
-3. **SEO & Technical Audit**:
-   - Checks SSL validity
-   - Inspects meta title and meta description tags
-   - Scrapes for Google Analytics script tags
-   - Checks presence of `/robots.txt` and `/sitemap.xml`
-   - Queries **Google PageSpeed Insights API** for a mobile performance score.
-4. **Weighted Prioritization Scoring**: Scores each lead out of 100 points. A lower score indicates more technical/SEO deficiencies (making them higher-priority outreach targets).
-5. **AI Cold Outreach**: Generates a short (under 100 words), direct outreach email focused on the top 2 severe issues using `gemini-2.0-flash-lite` (or `llama-3.1-8b-instant` if Gemini hits a rate limit).
-6. **Smart Caching & Database**: Stores all results in a local SQLite database (`leads.db`). Subsequent runs skip leads already marked as `status='processed'` to save APIs and crawl bandwidth, unless the `--force` flag is specified.
+![Operational Dashboard](assets/dashboard_screenshot.png)
 
 ---
 
-## Setup Instructions
+### System Architecture
 
-### 1. Installation
+```mermaid
+graph TD
+    User([User / Web Dashboard]) -->|Trigger Pipeline| Flask[Flask API Server]
+    Flask -->|Spawn Background Thread| Pipeline[Pipeline Orchestrator]
+    
+    Pipeline -->|1. Geocode & Discover| Discovery[Discovery Module]
+    Discovery -->|Query API| Geoapify[Geoapify Places API]
+    
+    Pipeline -->|2. Crawl & Scraping| Crawler[Enrichment Module]
+    Crawler -->|Extract Emails| Web[Business Websites]
+    
+    Pipeline -->|3. SEO & PageSpeed Audit| Auditor[Analysis Module]
+    Auditor -->|Mobile Score| PageSpeed[Google PageSpeed API]
+    Auditor -->|Inspect Metadata| Web
+    
+    Pipeline -->|4. Score Lead| Scoring[Scoring Module]
+    
+    Pipeline -->|5. Draft Outreach| Outreach[LLM Outreach Module]
+    Outreach -->|Primary API| Gemini[Gemini API]
+    Outreach -->|Fallback API| Groq[Groq Llama-3 API]
+    
+    Pipeline -->|6. Cache & Persist| DB[(SQLite Database)]
+    
+    Flask -->|Stream Logs & Reports| User
+```
 
-Clone or download the project files into your desired workspace, and install the required Python packages:
+---
 
+### Core Features
+
+*   **Targeted Place Discovery:** Resolves textual locations to geographical coordinates, locating businesses in a 10km radius using the Geoapify Places and Place Details APIs.
+*   **Polite Scraper Engine:** Inspects and complies with robots.txt, maps candidate links (e.g., /about, /contact), applies randomized request delays, and uses modern User-Agents to reliably extract email addresses.
+*   **SEO & Speed Audit:** Checks SSL validity, SEO meta titles/descriptions, Google Analytics scripts, XML sitemaps, and runs mobile performance checks using the Google PageSpeed Insights API.
+*   **Prioritization Engine:** Ranks leads out of 100 points, subtracting penalties for SEO and performance deficiencies to surface the highest-value clients.
+*   **Dual-LLM Resiliency:** Drafts personalized cold emails targeting the top two audited website problems using Gemini, auto-falling back to Groq (Llama-3) or static templating to ensure system uptime.
+*   **Asynchronous Processing Dashboard:** Real-time log streaming from a background execution thread to a frontend web console, with instant pipeline cancel controls.
+*   **Data Export:** Formats and downloads lead lists directly to styled Excel spreadsheets (via Pandas & OpenPyXL) or raw CSVs.
+
+---
+
+### Engineering Decisions & Challenges
+
+#### 1. Polite & Safe Web Crawling
+Web scrapers routinely face blocking, IP bans, or SSL failures. The scraper module:
+*   Queries `robots.txt` dynamically and caches the parsed directives to limit repeated server queries.
+*   Applies a random politeness delay (1.0 to 3.0 seconds) between requests.
+*   Uses regex-based filtering to clean found emails and discard asset false-positives (like `.png`, `.jpg`, `.css` filenames).
+
+#### 2. Thread-Safe Live Log Streaming
+Streaming real-time execution logs from a long-running background thread to a stateless HTTP API without blocking the main event loop required:
+*   A custom thread-safe `InMemoryLogHandler` extending Python's native `logging.Handler`.
+*   An atomic integer index tracker enabling the frontend to fetch only the newest log lines since its last request.
+*   A shared atomic cancellation event checkable at every execution stage.
+
+#### 3. Graceful LLM Failover
+To protect against API quota limits or service outages:
+*   The email generator implements a tier-based cascade: primary API (`gemini-2.5-flash`) -> fallback API (`llama-3.1-8b-instant` via Groq) -> structured static templates.
+*   Errors are caught internally and logged without terminating the audit pipeline.
+
+---
+
+### Tech Stack
+
+*   **Backend:** Python 3, Flask, Flask-CORS, Gunicorn, SQLite3
+*   **Scraping & Data:** BeautifulSoup4, Requests, Pandas, OpenPyXL
+*   **Integrations:** Geoapify API, Google PageSpeed Insights API, Google Gemini SDK, Groq SDK
+*   **Frontend:** HTML5, Vanilla JavaScript, Custom CSS Variables
+
+---
+
+### Folder Structure
+
+*   [app.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/app.py) - Flask API entry point and thread management.
+*   `lead_gen_agent/` - Python application module.
+    *   [pipeline.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/pipeline.py) - Pipeline orchestrator and workflow state machine.
+    *   [discovery.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/discovery.py) - Location geocoding and Geoapify queries.
+    *   [enrichment.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/enrichment.py) - Web crawler and regex email parser.
+    *   [analysis.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/analysis.py) - Technical auditing and PageSpeed API integration.
+    *   [scoring.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/scoring.py) - Prioritization math scoring logic.
+    *   [outreach.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/outreach.py) - Cold email copywriter and API fallback cascade.
+    *   [storage.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/storage.py) - SQLite schema operations and query filters.
+    *   [config.py](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/lead_gen_agent/config.py) - Global log settings and API client configurations.
+*   `templates/` - Frontend views directory.
+    *   [index.html](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/templates/index.html) - Fully stylized dashboard console UI.
+*   `assets/` - Static media files.
+    *   [dashboard_screenshot.png](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/assets/dashboard_screenshot.png) - Application screenshot.
+*   [requirements.txt](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/requirements.txt) - Production environment requirements.
+*   [.env.example](file:///c:/Users/Mohit/Desktop/Devlopment/agents/Lead%20Generator%20Agent/.env.example) - Template file containing environmental key configurations.
+
+---
+
+### Installation & Local Setup
+
+#### Prerequisites
+*   Python 3.8 or higher
+*   Geoapify API key (free tier)
+*   Google Gemini / Groq API keys
+
+#### 1. Clone & Set Up Dependencies
 ```bash
+git clone https://github.com/MohitPant2803/LeadGenerator-Backend.git
+cd LeadGenerator-Backend
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-
-Create a `.env` file in the root of the project. You can copy the template from `.env.example`:
-
+#### 2. Configure Environment Variables
+Create a `.env` file in the root folder using the template:
 ```bash
 cp .env.example .env
 ```
-
-Edit the `.env` file to add your API keys:
-
+Fill in the API keys:
 ```env
-GEOAPIFY_API_KEY=your_geoapify_key_here
-PAGESPEED_API_KEY=your_pagespeed_key_optional
+GEOAPIFY_API_KEY=your_geoapify_key
+PAGESPEED_API_KEY=your_google_pagespeed_key_optional
 GEMINI_API_KEY=your_gemini_key_here
 GROQ_API_KEY=your_groq_key_here
 ```
 
-### 3. Acquiring Your API Keys
-
-- **Geoapify API Key**:
-  1. Go to [myprojects.geoapify.com](https://myprojects.geoapify.com/).
-  2. Create a free account (no credit card or billing configuration required).
-  3. Create a new project and generate an API key. The free tier gives you 3,000 credits/day.
-- **Google PageSpeed Insights API Key (Optional)**:
-  - You can obtain a free key via the Google Cloud Console by enabling the PageSpeed Insights API. However, it is **completely optional**; if omitted, the agent will query the API without a key (which works fine for low-volume requests).
-- **Gemini API Key**:
-  - Get a free-tier API key from the Google AI Studio at [aistudio.google.com](https://aistudio.google.com/).
-- **Groq API Key**:
-  - Sign up and retrieve an API key from the Groq console at [console.groq.com](https://console.groq.com/).
-
----
-
-## How to Run
-
-Execute the pipeline orchestrator by specifying a niche and a location:
-
+#### 3. Run via CLI
+To perform searches directly from your terminal:
 ```bash
-python lead_gen_agent/pipeline.py --niche "catering.restaurant" --location "Dallas, TX" --limit 3
+python lead_gen_agent/pipeline.py --niche "dentists" --location "Dallas, TX" --limit 5
 ```
 
-### Arguments
-
-- `--niche`: The business niche. Can be a Geoapify category (e.g. `catering.restaurant`, `healthcare.clinic.dentist`, `commercial.office`) or a plain-text term (e.g. `dentists`, `hotels`, `plumbers`), which will be mapped automatically.
-- `--location`: The target city and state/country (e.g. `Dallas, TX`, `Seattle`, `London`).
-- `--limit`: Maximum number of businesses to discover and audit (default: `10`).
-- `--force`: Ignore database caching and force a complete re-run of enrichment, SEO audit, and email generation for all matching leads.
-
----
-
-## Project Structure
-
-```text
-lead_gen_agent/
-│
-├── config.py         # Configures logging (outputs to console and lead_gen.log) and loads env keys
-├── discovery.py      # Geocodes locations and queries Geoapify Places & Place Details APIs
-├── enrichment.py     # Web crawler parsing homepage + contact + about for email extraction
-├── analysis.py       # SEO meta-tag, Google Analytics, SSL, sitemap/robots, and PageSpeed auditor
-├── scoring.py        # Implements weighted penalty rubrics for lead scoring
-├── outreach.py       # Interacts with Gemini and Groq fallback to draft cold outreach drafts
-├── storage.py        # Manages SQLite database creation, caching checks, and lead states
-└── pipeline.py       # Orchestrates the execution sequence, exception handling, and logging
+#### 4. Run the Web Server Locally
+```bash
+python app.py
 ```
+Open your browser and navigate to `http://localhost:5001` to access the interactive dashboard.
